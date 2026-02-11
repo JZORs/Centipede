@@ -1,9 +1,9 @@
 import pygame, sys 
 
 from arcade_machine_sdk import GameBase, GameMeta
-from Source.Scripts.Entities import PhysicsEntity, Player
-from Source.Scripts.Tilemap import Tilemap
-from Source.Scripts.Utils import load_image, load_images, BASE_PATH
+from Scripts.Entities import PhysicsEntity, Player
+from Scripts.Tilemap import Tilemap
+from Scripts.Utils import load_image, load_images, BASE_PATH
 
 class Game(GameBase):
     def __init__(self, metadata = GameMeta): 
@@ -81,4 +81,5 @@ class Game(GameBase):
         pygame.draw.rect(self.display, (28,163,28), (6, 6, self.display.get_width() - 12, self.display.get_height() - 12), 3)
 
         self.surface.blit(pygame.transform.scale(self.display, self.surface.get_size()), (0, 0))
+
         
