@@ -1,4 +1,4 @@
-from Source import Game
+from Game import Game
 from arcade_machine_sdk import GameMeta
 import pygame
 
@@ -14,4 +14,5 @@ metadata = (GameMeta()
 
 game = Game(metadata)
 if __name__ == "__main__":
+
     game.run_independently()
