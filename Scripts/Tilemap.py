@@ -6,25 +6,35 @@ class Tilemap():
     def __init__(self, game, tile_size = 8):
         self.game = game
         self.tile_size = tile_size
-        self.random_pos = [list(range(2,60)), list(range(5, 40))]
+        self.random_pos = [list(range(2,60)), list(range(7, 38))]
         self.tilemap = {}
+        self.rows_ordered = []
+        self.current_row_idx = 0  
+        self.timer = 0
+        self.speed = 13
 
-    def generate_map(self):
-        self.random_pos = [list(range(2,60)), list(range(5, 40))]
+    def generate_map(self, tiles_to_create):
         self.tilemap = {}
-        tiles_to_create = 50
-        while tiles_to_create > 0:
-            if not self.random_pos[0] or not self.random_pos[1]:
-                break
-                
-            x = random.choice(self.random_pos[0])
-            y = random.choice(self.random_pos[1])
-            
-            self.tilemap[str(x) + ';' + str(y)] = {'type': 'normal_m', 'variant': 0, 'pos': (x, y)}
-            
-            self.random_pos[0].remove(x)
-            self.random_pos[1].remove(y)
-            tiles_to_create -= 1
+        self.tiles_to_create = tiles_to_create
+        self.range_x = self.random_pos[0]
+        self.range_y = self.random_pos[1]
+        
+        while self.tiles_to_create > 0:
+            x = random.choice(self.range_x)
+            y = random.choice(self.range_y)
+            loc = str(x) + ';' + str(y)
+
+            if loc not in self.tilemap:
+                self.tilemap[loc] = {'type': 'normal_m', 'variant': 0, 'pos': (x, y)}
+                self.tiles_to_create -= 1
+
+        all_ys = set(tile['pos'][1] for tile in self.tilemap.values())
+        self.rows_ordered = sorted(list(all_ys))
+        self.current_row_idx = 0
+        self.timer = 0
+
+    def regenerate(self):
+        pass
 
     def tiles_around(self, pos):
         tiles = []
@@ -47,6 +57,22 @@ class Tilemap():
             return self.tilemap[tile_loc]
             
     def render(self, surf):
+        if self.current_row_idx < len(self.rows_ordered):
+            self.timer += 1
+            if self.timer >= self.speed:
+                self.current_row_idx += 1
+                self.timer = 0
+                self.game.sfx['mushroom'].play()
+        
+        if self.current_row_idx > 0:
+            max_y = self.rows_ordered[self.current_row_idx - 1]
+        else: 
+            max_y = -1
+
+        if self.current_row_idx >= len(self.rows_ordered):
+            max_y = float('inf')
+        
         for loc in self.tilemap:
             tile = self.tilemap[loc]
-            surf.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size))
+            if tile['pos'][1] <= max_y:
+                surf.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size))

@@ -3,6 +3,7 @@ from arcade_machine_sdk import GameMeta
 import pygame
 
 pygame.init()
+pygame.font.init()
 
 metadata = (GameMeta()
             .with_title("CENTIPEDE")
@@ -14,5 +15,4 @@ metadata = (GameMeta()
 
 game = Game(metadata)
 if __name__ == "__main__":
-
     game.run_independently()
