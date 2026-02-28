@@ -13,19 +13,19 @@ class Game(GameBase):
         self.display = pygame.Surface((512, 384)) 
 
         self.assets = {
-            'player': load_image(BASE_PATH / "images" / "entities" / "player" / "player.png"),
-            'projectile': load_image(BASE_PATH / "images" / "entities" / "player" / "projectile.png"),
-            'normal_m': load_images(BASE_PATH / "images" / "tiles" / "normal_m"),
-            'poison_m': load_images(BASE_PATH / "images" / "tiles" / "poisoned_m"),
-            'particle/player': Animation(load_images(BASE_PATH / "images" / "particles" / "player"), img_dur=6, loop=False),
-            'particle/centipede': Animation(load_images(BASE_PATH / "images" / "particles" / "centipede"), img_dur=6, loop=False),
-            'particle/mushroom': Animation(load_images(BASE_PATH / "images" / "particles" / "mushroom"), img_dur=6, loop=False),
-            'player/idle': Animation(load_images(BASE_PATH / "images" / "entities" / "player" / "idle"), img_dur=8),
-            'player/fire': Animation(load_images(BASE_PATH / "images" / "entities" / "player" / "fire")),
-            'centipede/head/idle': Animation(load_images(BASE_PATH / "images" / "entities" / "centipede" / "cent_head")),
-            'centipede/head/tilt': Animation(load_images(BASE_PATH / "images" / "entities" / "centipede" / "head_tilt")),
-            'centipede/body/idle': Animation(load_images(BASE_PATH / "images" / "entities" / "centipede" / "cent_body")),
-            'centipede/body/tilt': Animation(load_images(BASE_PATH / "images" / "entities" / "centipede" / "body_tilt")),
+            'player': load_image(BASE_PATH / "images" / "level_1" / "entities" / "player" / "player.png"),
+            'projectile': load_image(BASE_PATH / "images" / "level_1" / "entities" / "player" / "projectile.png"),
+            'normal_m': load_images(BASE_PATH / "images" / "level_1" / "tiles" / "normal_m"),
+            'poison_m': load_images(BASE_PATH / "images" / "level_1" / "tiles" / "poisoned_m"),
+            'particle/player': Animation(load_images(BASE_PATH / "images" / "level_1" / "particles" / "player"), img_dur=6, loop=False),
+            'particle/centipede': Animation(load_images(BASE_PATH / "images" / "level_1" / "particles" / "centipede"), img_dur=6, loop=False),
+            'particle/mushroom': Animation(load_images(BASE_PATH / "images" / "level_1" / "particles" / "mushroom"), img_dur=6, loop=False),
+            'player/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "player" / "idle"), img_dur=8),
+            'player/fire': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "player" / "fire")),
+            'centipede/head/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "cent_head")),
+            'centipede/head/tilt': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "head_tilt")),
+            'centipede/body/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "cent_body")),
+            'centipede/body/tilt': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "body_tilt")),
         }
 
         self.sfx = {
