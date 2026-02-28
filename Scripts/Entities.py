@@ -56,11 +56,12 @@ class PhysicsEntity():
 class CentipedeHead(PhysicsEntity):
     def __init__(self, game, position, speed):
         super().__init__(game, 'centipede/head', position, (8, 8))
-        self.direction = 1
+        self.direction = random.choice((-1, 1))
         self.speed = speed
         self.history = []
         self.is_tilting = False
-        self.flip = True
+        self.change = 1
+        self.flip = True if self.direction == 1 else False
         self.falling = False
         self.set_action('idle')
 
@@ -70,20 +71,26 @@ class CentipedeHead(PhysicsEntity):
 
         self.pos[1] = round(self.pos[1] / 8) * 8
 
-        wall_hit = self.pos[0] <= 14 or self.pos[0] + self.size[0] >= self.game.display.get_width() - 14
+        wall_hit = self.pos[0] < 14 or self.pos[0] + self.size[0] > self.game.display.get_width() - 14
         
         if self.collisions['right'] or self.collisions['left'] or wall_hit:
             self.direction *= -1
             self.flip = not self.flip
             self.is_tilting = True
             self.set_action('tilt')
-            
-            super().update(tilemap, movement=(0, 8))
-            if self.collisions['down']:
-                super().update(tilemap, movement=(0, 16))
+
+            super().update(tilemap, movement=(0, 8 * self.change))
+            if self.collisions['down'] or self.collisions['up']:
+                super().update(tilemap, movement=(0, 16 * self.change))
+
         else:
             self.is_tilting = False
             self.set_action('idle')
+
+        if self.pos[1] + self.size[1] >= self.game.display.get_height() - 25 and self.change == 1:
+            self.change = -1
+        elif self.pos[1] <= 25 and self.change == -1:
+            self.change = 1
 
         self.history.append({'pos': list(self.pos), 'tilt': self.is_tilting})
 
@@ -100,11 +107,11 @@ class CentipedeBody(PhysicsEntity):
     def __init__(self, game, position):
         super().__init__(game, 'centipede/body', position, (8, 8))
         self.current_tilt = False
-        self.lerp_factor = 0.3
+        self.lerp_factor = 0.2
         self.set_action('idle')
 
     def follow(self, leader, segment_index):
-        delay = (segment_index + 1) * 7
+        delay = (segment_index + 1) * 4
 
         if len(leader.history) >= delay:
             data = leader.history[-delay]

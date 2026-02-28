@@ -13,6 +13,13 @@ class Tilemap():
         self.timer = 0
         self.speed = 13
 
+    def add_mushroom(self, pos):
+        grid_pos = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
+        tile_loc = str(grid_pos[0]) + ';' + str(grid_pos[1])
+        
+        if tile_loc not in self.tilemap:
+            self.tilemap[tile_loc] = {'type': 'normal_m', 'variant': 0, 'pos': grid_pos}
+
     def generate_map(self, tiles_to_create):
         self.tilemap = {}
         self.tiles_to_create = tiles_to_create
