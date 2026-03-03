@@ -1,7 +1,7 @@
 import pygame, random, math, sys 
 
 from arcade_machine_sdk import GameBase, GameMeta
-from Scripts.Entities import PhysicsEntity, CentipedeHead, CentipedeBody, Player
+from Scripts.Entities import PhysicsEntity, CentipedeHead, CentipedeBody, Player, Spider, Flea, Scorpion
 from Scripts.Tilemap import Tilemap
 from Scripts.Particles import Particle
 from Scripts.Utils import Animation, load_image, load_images, load_sound, draw_text, BASE_PATH
@@ -26,6 +26,9 @@ class Game(GameBase):
             'centipede/head/tilt': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "head_tilt")),
             'centipede/body/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "cent_body")),
             'centipede/body/tilt': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "centipede" / "body_tilt")),
+            'spider/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "spider")),
+            'flea/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "fleas")),
+            'scorpion/idle': Animation(load_images(BASE_PATH / "images" / "level_1" / "entities" / "scorpion")),
         }
 
         self.sfx = {
@@ -92,6 +95,9 @@ class Game(GameBase):
         self.assets['centipede/head/tilt'] = Animation(load_images(BASE_PATH / "images" / f"level_{level}" / "entities" / "centipede" / "head_tilt"))
         self.assets['centipede/body/idle'] = Animation(load_images(BASE_PATH / "images" / f"level_{level}" / "entities" / "centipede" / "cent_body"))
         self.assets['centipede/body/tilt'] = Animation(load_images(BASE_PATH / "images" / f"level_{level}" / "entities" / "centipede" / "body_tilt"))
+        self.assets['spider/idle'] = Animation(load_images(BASE_PATH / "images" / f"level_{level}" / "entities" / "spider"))
+        self.assets['flea/idle'] = Animation(load_images(BASE_PATH / "images" / f"level_{level}" / "entities" / "fleas"))
+        self.assets['scorpion/idle'] = Animation(load_images(BASE_PATH / "images" / f"level_{level}" / "entities" / "scorpion"))
 
         self.current_color = self.level_borders[str(level)]
         config = random.choice(self.speed_configs)
@@ -101,6 +107,12 @@ class Game(GameBase):
         self.projectiles = []
         self.centipedes = []
         self.particles = []
+        self.spiders = []
+        self.spider_spawn_timer = random.randint(180, 420)  # 3-7 segundos a 60 FPS
+        self.fleas = []
+        self.flea_spawn_timer = random.randint(240, 480)  # 4-8 segundos a 60 FPS
+        self.scorpions = []
+        self.scorpion_spawn_timer = random.randint(300, 600)  # 5-10 segundos a 60 FPS
 
         initial_head = CentipedeHead(self, (256, -10), selected_speed)
         initial_segments = []
@@ -131,6 +143,12 @@ class Game(GameBase):
     def reset_after_death(self):
         self.projectiles = []
         self.centipedes = []
+        self.spiders = []
+        self.spider_spawn_timer = random.randint(180, 420)
+        self.fleas = []
+        self.flea_spawn_timer = random.randint(240, 480)
+        self.scorpions = []
+        self.scorpion_spawn_timer = random.randint(300, 600)
 
         config = random.choice(self.speed_configs)
         initial_head = CentipedeHead(self, (256, -10), config['speed'])
@@ -214,6 +232,102 @@ class Game(GameBase):
                     for i, segment in enumerate(body):
                         segment.follow(head, i)
 
+                # Sistema de aparición aleatoria de arañas
+                self.spider_spawn_timer -= 1
+                if self.spider_spawn_timer <= 0:
+                    if len(self.spiders) == 0:
+                        # Aparecer araña desde un lado aleatorio
+                        side = random.choice(['left', 'right', 'top', 'bottom'])
+                        if side == 'left':
+                            spider_x = 14
+                            spider_y = random.randint(self.display.get_height() - 100, self.display.get_height() - 30)
+                        elif side == 'right':
+                            spider_x = self.display.get_width() - 22
+                            spider_y = random.randint(self.display.get_height() - 100, self.display.get_height() - 30)
+                        elif side == 'top':
+                            spider_x = random.randint(20, self.display.get_width() - 20)
+                            spider_y = self.display.get_height() - (96 + 14)
+                        else:  # bottom
+                            spider_x = random.randint(20, self.display.get_width() - 20)
+                            spider_y = self.display.get_height() - 22
+                        
+                        self.spiders.append(Spider(self, (spider_x, spider_y)))
+                        self.spider_spawn_timer = random.randint(300, 600)  # 5-10 segundos
+                    else:
+                        # Si ya hay una araña, esperar menos tiempo para revisar
+                        self.spider_spawn_timer = random.randint(60, 120)
+
+                # Actualizar arañas
+                for spider in self.spiders[:]:
+                    spider.update(self.tilemap)
+
+                # Sistema de aparición aleatoria de moscas (solo desde nivel 2)
+                if self.level >= 2:
+                    self.flea_spawn_timer -= 1
+                    if self.flea_spawn_timer <= 0:
+                        # Aparecer mosca aleatoriamente
+                        # Posición X aleatoria cada vez
+                        flea_x = random.randint(20, self.display.get_width() - 20)
+                        self.fleas.append(Flea(self, (flea_x, 10)))
+                        
+                        # Reiniciar timer para la próxima aparición
+                        self.flea_spawn_timer = random.randint(240, 480)
+
+                # Actualizar moscas
+                for flea in self.fleas[:]:
+                    flea.update(self.tilemap)
+                    # Eliminar mosca si sale de la pantalla
+                    if flea.pos[1] > self.display.get_height():
+                        self.fleas.remove(flea)
+
+                # Sistema de aparición aleatoria de escorpiones (solo desde nivel 3)
+                if self.level >= 3:
+                    self.scorpion_spawn_timer -= 1
+                    if self.scorpion_spawn_timer <= 0:
+                        # Buscar una fila con espacio para el escorpión
+                        # Área válida: desde y=32 hasta el área del jugador
+                        min_y = 4  # 32 píxeles / 8
+                        max_y = (self.display.get_height() - (96 + 14)) // self.tilemap.tile_size
+                        
+                        # Intentar encontrar una fila con espacio
+                        available_rows = []
+                        for y in range(min_y, max_y):
+                            # Contar hongos en esta fila
+                            mushrooms_in_row = 0
+                            for loc in self.tilemap.tilemap:
+                                tile = self.tilemap.tilemap[loc]
+                                if tile['pos'][1] == y:
+                                    mushrooms_in_row += 1
+                            
+                            # Si la fila tiene espacio (menos de 50 hongos), es válida
+                            if mushrooms_in_row < 50:
+                                available_rows.append(y)
+                        
+                        # Si hay filas disponibles, crear escorpión
+                        if available_rows:
+                            chosen_row = random.choice(available_rows)
+                            # Elegir lado aleatorio (izquierda o derecha)
+                            side = random.choice(['left', 'right'])
+                            if side == 'left':
+                                scorpion_x = 10
+                                direction = 1  # Moverse a la derecha
+                            else:
+                                scorpion_x = self.display.get_width() - 18
+                                direction = -1  # Moverse a la izquierda
+                            
+                            scorpion_y = chosen_row * self.tilemap.tile_size
+                            self.scorpions.append(Scorpion(self, (scorpion_x, scorpion_y), direction))
+                        
+                        # Reiniciar timer
+                        self.scorpion_spawn_timer = random.randint(300, 600)
+
+                # Actualizar escorpiones
+                for scorpion in self.scorpions[:]:
+                    scorpion.update(self.tilemap)
+                    # Eliminar escorpión si sale de la pantalla
+                    if scorpion.pos[0] < -10 or scorpion.pos[0] > self.display.get_width() + 10:
+                        self.scorpions.remove(scorpion)
+
                 collision_detected = False
                 
                 for centi in self.centipedes[:]:
@@ -224,6 +338,27 @@ class Game(GameBase):
                             collision_detected = True
                     if collision_detected:
                         break
+                
+                # Verificar colisiones con arañas
+                if not collision_detected:
+                    for spider in self.spiders[:]:
+                        if spider.rect().colliderect(self.player.rect()):
+                            collision_detected = True
+                            break
+                
+                # Verificar colisiones con moscas
+                if not collision_detected:
+                    for flea in self.fleas[:]:
+                        if flea.rect().colliderect(self.player.rect()):
+                            collision_detected = True
+                            break
+                
+                # Verificar colisiones con escorpiones
+                if not collision_detected:
+                    for scorpion in self.scorpions[:]:
+                        if scorpion.rect().colliderect(self.player.rect()):
+                            collision_detected = True
+                            break
 
                 self.screenshake = max(0, self.screenshake - 1)
 
@@ -244,6 +379,9 @@ class Game(GameBase):
                         self.player.pos = [-1000, -1000]
                         self.projectiles = [] 
                         self.centipedes = []
+                        self.spiders = []  # Eliminar arañas cuando el jugador muere
+                        self.fleas = []  # Eliminar moscas cuando el jugador muere
+                        self.scorpions = []  # Eliminar escorpiones cuando el jugador muere
                         self.healing_mushrooms = True 
                 
                 if self.healing_mushrooms:
@@ -347,8 +485,57 @@ class Game(GameBase):
                         if hit_something: break
 
                     if hit_something:
-                        self.projectiles.remove(projectile)
+                        if projectile in self.projectiles:
+                            self.projectiles.remove(projectile)
                         self.sfx['get_shoot'].play()
+                    else:
+                        # Verificar colisiones con arañas
+                        for spider in self.spiders[:]:
+                            if spider.rect().colliderect(proj_rect):
+                                for _ in range(15):
+                                    angle = random.random() * math.pi * 2
+                                    speed = random.random() * 5
+                                    self.particles.append(Particle(self, 'centipede', spider.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
+                                self.score += 250
+                                self.flag_score += 250
+                                self.spiders.remove(spider)
+                                if projectile in self.projectiles:
+                                    self.projectiles.remove(projectile)
+                                self.sfx['get_shoot'].play()
+                                hit_something = True
+                                break
+                        
+                        # Verificar colisiones con moscas
+                        if not hit_something:
+                            for flea in self.fleas[:]:
+                                if flea.rect().colliderect(proj_rect):
+                                    for _ in range(15):
+                                        angle = random.random() * math.pi * 2
+                                        speed = random.random() * 5
+                                        self.particles.append(Particle(self, 'centipede', flea.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
+                                    self.score += 100
+                                    self.flag_score += 100
+                                    self.fleas.remove(flea)
+                                    if projectile in self.projectiles:
+                                        self.projectiles.remove(projectile)
+                                    self.sfx['get_shoot'].play()
+                                    break
+                        
+                        # Verificar colisiones con escorpiones
+                        if not hit_something:
+                            for scorpion in self.scorpions[:]:
+                                if scorpion.rect().colliderect(proj_rect):
+                                    for _ in range(15):
+                                        angle = random.random() * math.pi * 2
+                                        speed = random.random() * 5
+                                        self.particles.append(Particle(self, 'centipede', scorpion.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
+                                    self.score += 500
+                                    self.flag_score += 500
+                                    self.scorpions.remove(scorpion)
+                                    if projectile in self.projectiles:
+                                        self.projectiles.remove(projectile)
+                                    self.sfx['get_shoot'].play()
+                                    break
 
     def render(self):
         if not self.dead:
@@ -375,6 +562,18 @@ class Game(GameBase):
             centi['head'].render(self.display)
             for segment in centi['body']:
                 segment.render(centi['head'], self.display)
+        
+        # Renderizar arañas
+        for spider in self.spiders:
+            spider.render(self.display)
+        
+        # Renderizar moscas
+        for flea in self.fleas:
+            flea.render(self.display)
+        
+        # Renderizar escorpiones
+        for scorpion in self.scorpions:
+            scorpion.render(self.display)
 
         if self.dead:
             self.dead += 1

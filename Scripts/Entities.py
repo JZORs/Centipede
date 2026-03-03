@@ -192,3 +192,127 @@ class Player(PhysicsEntity):
 
     def render(self, surf):
         super().render(surf)
+
+
+class Spider(PhysicsEntity):
+    def __init__(self, game, position):
+        super().__init__(game, 'spider', position, (8, 8))
+        self.direction = [random.choice([-1, 1]), random.choice([-1, 1])]
+        self.speed = random.uniform(1.0, 2.0)
+        self.set_action('idle')
+        
+        # Área de movimiento limitada al área del jugador
+        self.min_x = 14
+        self.max_x = game.display.get_width() - 14
+        self.min_y = game.display.get_height() - (96 + 14)
+        self.max_y = game.display.get_height() - 14
+        
+        # Timer para cambios de dirección aleatorios
+        self.direction_timer = random.randint(30, 90)
+    
+    def update(self, tilemap):
+        # Movimiento diagonal
+        movement = (self.direction[0] * self.speed, self.direction[1] * self.speed)
+        super().update(tilemap, movement)
+        
+        # Verificar límites del área del jugador
+        if self.pos[0] < self.min_x:
+            self.pos[0] = self.min_x
+            self.direction[0] *= -1
+        elif self.pos[0] + self.size[0] > self.max_x:
+            self.pos[0] = self.max_x - self.size[0]
+            self.direction[0] *= -1
+            
+        if self.pos[1] < self.min_y:
+            self.pos[1] = self.min_y
+            self.direction[1] *= -1
+        elif self.pos[1] + self.size[1] > self.max_y:
+            self.pos[1] = self.max_y - self.size[1]
+            self.direction[1] *= -1
+        
+        # Cambio aleatorio de dirección
+        self.direction_timer -= 1
+        if self.direction_timer <= 0:
+            if random.random() < 0.5:
+                self.direction[0] *= -1
+            if random.random() < 0.5:
+                self.direction[1] *= -1
+            self.direction_timer = random.randint(30, 90)
+        
+        # Eliminar hongos al pasar sobre ellos (100% de probabilidad)
+        grid_x = int(self.pos[0] // tilemap.tile_size)
+        grid_y = int(self.pos[1] // tilemap.tile_size)
+        tile_loc = str(grid_x) + ';' + str(grid_y)
+        
+        if tile_loc in tilemap.tilemap:
+            del tilemap.tilemap[tile_loc]
+        
+        self.animation.update()
+    
+    def render(self, surf):
+        super().render(surf)
+
+class Flea(PhysicsEntity):
+    def __init__(self, game, position):
+        super().__init__(game, 'flea', position, (8, 8))
+        self.speed = 3.0  # Velocidad más rápida
+        self.set_action('idle')
+        self.mushroom_drop_timer = 0
+        
+    def update(self, tilemap):
+        # Movimiento vertical hacia abajo SIN colisiones con hongos
+        self.pos[1] += self.speed
+        
+        # Generar hongos mientras cae con menor probabilidad (cada 16 píxeles aproximadamente)
+        self.mushroom_drop_timer += self.speed
+        if self.mushroom_drop_timer >= 16:  # Cambiado de 8 a 16 para reducir frecuencia
+            self.mushroom_drop_timer = 0
+            
+            # Probabilidad del 40% de colocar un hongo
+            if random.random() < 0.4:
+                # Calcular posición en la grilla
+                grid_x = int(self.pos[0] // tilemap.tile_size)
+                grid_y = int(self.pos[1] // tilemap.tile_size)
+                
+                # Límites del área de juego (considerando los bordes de 14 píxeles)
+                min_grid_x = 2  # 14 píxeles / 8 = ~2
+                max_grid_x = (self.game.display.get_width() - 14) // tilemap.tile_size
+                min_grid_y = 4  # Área superior (después del borde superior)
+                max_grid_y = (self.game.display.get_height() - 14) // tilemap.tile_size
+                
+                # Solo generar hongos si está dentro del área válida
+                if min_grid_x <= grid_x < max_grid_x and min_grid_y <= grid_y < max_grid_y:
+                    tilemap.add_mushroom([grid_x * tilemap.tile_size, grid_y * tilemap.tile_size])
+        
+        self.animation.update()
+    
+    def render(self, surf):
+        super().render(surf)
+
+class Scorpion(PhysicsEntity):
+    def __init__(self, game, position, direction):
+        super().__init__(game, 'scorpion', position, (8, 8))
+        self.direction = direction  # -1 para izquierda, 1 para derecha
+        self.speed = 2.0
+        self.set_action('idle')
+        self.flip = True if self.direction == 1 else False
+        
+    def update(self, tilemap):
+        # Movimiento horizontal SIN colisiones
+        self.pos[0] += self.direction * self.speed
+        
+        # Envenenar hongos al pasar sobre ellos
+        grid_x = int(self.pos[0] // tilemap.tile_size)
+        grid_y = int(self.pos[1] // tilemap.tile_size)
+        tile_loc = str(grid_x) + ';' + str(grid_y)
+        
+        if tile_loc in tilemap.tilemap:
+            tile = tilemap.tilemap[tile_loc]
+            # Cambiar a hongo envenenado si es un hongo normal
+            if tile['type'] == 'normal_m':
+                tile['type'] = 'poison_m'
+        
+        self.animation.update()
+    
+    def render(self, surf):
+        super().render(surf)

@@ -15,10 +15,18 @@ class Tilemap():
 
     def add_mushroom(self, pos):
         grid_pos = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
-        tile_loc = str(grid_pos[0]) + ';' + str(grid_pos[1])
         
-        if tile_loc not in self.tilemap:
-            self.tilemap[tile_loc] = {'type': 'normal_m', 'variant': 0, 'pos': grid_pos}
+        # Límites del área de juego (considerando los bordes de 14 píxeles)
+        min_grid_x = 2  # 14 píxeles / 8 = ~2
+        max_grid_x = (self.game.display.get_width() - 14) // self.tile_size
+        min_grid_y = 4  # Área superior
+        max_grid_y = (self.game.display.get_height() - 14) // self.tile_size
+        
+        # Solo agregar hongo si está dentro de los límites
+        if min_grid_x <= grid_pos[0] < max_grid_x and min_grid_y <= grid_pos[1] < max_grid_y:
+            tile_loc = str(grid_pos[0]) + ';' + str(grid_pos[1])
+            if tile_loc not in self.tilemap:
+                self.tilemap[tile_loc] = {'type': 'normal_m', 'variant': 0, 'pos': grid_pos}
 
     def generate_map(self, tiles_to_create):
         self.tilemap = {}
