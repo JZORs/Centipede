@@ -75,6 +75,7 @@ class Game(GameBase):
 
     def load_level(self, level):
         if level > 5:
+            level = 1
             self.level = 1
             self.loop_levels = True
         
@@ -181,6 +182,9 @@ class Game(GameBase):
                         if event.key == pygame.K_SPACE:
                             self.player.shoot()
                             self.sfx['shoot'].play()
+                        if event.key == pygame.K_l:
+                            self.level += 1
+                            self.load_level(self.level)
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_w:
                         self.movement[0] = False
