@@ -107,11 +107,12 @@ class CentipedeBody(PhysicsEntity):
     def __init__(self, game, position):
         super().__init__(game, 'centipede/body', position, (8, 8))
         self.current_tilt = False
-        self.lerp_factor = 0.2
+        self.lerp_factor = 0
         self.set_action('idle')
 
     def follow(self, leader, segment_index):
-        delay = (segment_index + 1) * 4
+        base_delay = round(9 / leader.speed)
+        delay = (segment_index + 1) * base_delay
 
         if len(leader.history) >= delay:
             data = leader.history[-delay]
@@ -147,8 +148,11 @@ class CentipedeBody(PhysicsEntity):
 class Player(PhysicsEntity):
     def __init__(self, game, position, size):
         super().__init__(game, 'player', position, size)
-        self.lives = [(455 + (self.game.assets['player'].get_width() * (i * 1.5)), 15) for i in range(3)]
+        self.lives = [(452 + (self.game.assets['player'].get_width() * (i)), 15) for i in range(3)]
         self.set_action('idle')
+
+    def add_life(self):
+        self.lives.append((452 + (self.game.assets['player'].get_width() * (len(self.lives))), 15))
 
     def shoot(self):
         self.set_action('fire')

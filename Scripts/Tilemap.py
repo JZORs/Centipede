@@ -40,9 +40,6 @@ class Tilemap():
         self.current_row_idx = 0
         self.timer = 0
 
-    def regenerate(self):
-        pass
-
     def tiles_around(self, pos):
         tiles = []
         tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
