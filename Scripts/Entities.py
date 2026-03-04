@@ -159,36 +159,29 @@ class Player(PhysicsEntity):
         self.game.projectiles.append([[self.rect().centerx, self.rect().centery], 5, 0])
 
     def update(self, tilemap, movement = (0, 0)):
-        super().update(tilemap, movement)
-        frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
-
         self.set_action('idle')
+        if movement[0] != 0:
+            self.velocity[0] += movement[0] * 0.4
+            self.velocity[0] = max(-2, min(self.velocity[0], 2))
+        else:
+            if self.velocity[0] > 0:
+                self.velocity[0] = max(0, self.velocity[0] - 0.5)
+            elif self.velocity[0] < 0:
+                self.velocity[0] = min(0, self.velocity[0] + 0.5)
 
-        entity_rect = self.rect()
-        if frame_movement[0] > 0:
-            self.velocity[0] = min(1.2, self.velocity[0] + 0.1)
-            if entity_rect.x + self.size[0] > self.game.display.get_width() - 14:
-                entity_rect.x = self.game.display.get_width() - 14 - self.size[0]
-                self.pos[0] = entity_rect.x
-        if frame_movement[0] < 0:
-            self.velocity[0] = min(-1.2, self.velocity[0] + 0.1)
-            if entity_rect.x < 14:
-                entity_rect.x = 14
-                self.pos[0] = entity_rect.x
-        entity_rect = self.rect()
-        if frame_movement[1] > 0:
-            if entity_rect.y + self.size[1] > self.game.display.get_height() - 14:
-                entity_rect.y = self.game.display.get_height() - 14 - self.size[1]
-                self.pos[1] = entity_rect.y
-        if frame_movement[1] < 0:
-            if entity_rect.y < self.game.display.get_height() - (96 + 14):
-                entity_rect.y = self.game.display.get_height() - (96 + 14)
-                self.pos[1] = entity_rect.y
-        
-        if movement[0] == 0:
+        if (movement[0] > 0 and self.velocity[0] < 0) or (movement[0] < 0 and self.velocity[0] > 0):
             self.velocity[0] = 0
-        if movement[1] == 0:
-            self.velocity[1] = 0
+
+        super().update(tilemap, movement)
+
+        if self.pos[0] < 14:
+            self.pos[0] = 14
+        if self.pos[0] > self.game.display.get_width() - 14 - self.size[0]:
+            self.pos[0] = self.game.display.get_width() - 14 - self.size[0]
+        if self.pos[1] < self.game.display.get_height() * 0.75:
+            self.pos[1] = self.game.display.get_height() * 0.75
+        if self.pos[1] > self.game.display.get_height() - 14 - self.size[1]:
+            self.pos[1] = self.game.display.get_height() - 14 - self.size[1]
 
     def render(self, surf):
         super().render(surf)
@@ -287,7 +280,8 @@ class Flea(PhysicsEntity):
         self.animation.update()
     
     def render(self, surf):
-        super().render(surf)
+        visual_x = (int(self.pos[0]) // 8) * 8
+        surf.blit(self.animation.img(), (visual_x, self.pos[1]))
 
 class Scorpion(PhysicsEntity):
     def __init__(self, game, position, direction):

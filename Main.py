@@ -1,6 +1,6 @@
-from Game import Game
+from Game import Game  
 from arcade_machine_sdk import GameMeta
-import pygame
+import pygame  
 
 pygame.init()
 pygame.font.init()
