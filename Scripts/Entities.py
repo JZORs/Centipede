@@ -232,13 +232,22 @@ class Spider(PhysicsEntity):
                 self.direction[1] *= -1
             self.direction_timer = random.randint(30, 90)
         
-        # Eliminar hongos al pasar sobre ellos (100% de probabilidad)
-        grid_x = int(self.pos[0] // tilemap.tile_size)
-        grid_y = int(self.pos[1] // tilemap.tile_size)
-        tile_loc = str(grid_x) + ';' + str(grid_y)
+        # Eliminar hongos al pasar sobre ellos
+        # Verificar las 4 esquinas del rectángulo de la araña
+        corners = [
+            (self.pos[0], self.pos[1]),  # Esquina superior izquierda
+            (self.pos[0] + self.size[0], self.pos[1]),  # Esquina superior derecha
+            (self.pos[0], self.pos[1] + self.size[1]),  # Esquina inferior izquierda
+            (self.pos[0] + self.size[0], self.pos[1] + self.size[1])  # Esquina inferior derecha
+        ]
         
-        if tile_loc in tilemap.tilemap:
-            del tilemap.tilemap[tile_loc]
+        for corner in corners:
+            grid_x = int(corner[0] // tilemap.tile_size)
+            grid_y = int(corner[1] // tilemap.tile_size)
+            tile_loc = str(grid_x) + ';' + str(grid_y)
+            
+            if tile_loc in tilemap.tilemap:
+                del tilemap.tilemap[tile_loc]
         
         self.animation.update()
     

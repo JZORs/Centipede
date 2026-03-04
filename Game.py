@@ -209,7 +209,8 @@ class Game(GameBase):
                             self.loop_levels = False
                             self.level = 1
                             self.load_level(1)
-                    else:
+                    # Bloquear controles durante curación de hongos y death_timer
+                    elif not self.healing_mushrooms and self.death_timer == 0:
                         if event.key == pygame.K_w:
                             self.movement[0] = True
                             self.key_pressed.add('w')
@@ -252,7 +253,10 @@ class Game(GameBase):
                 if required_keys.issubset(self.key_pressed):
                     self.tutorial = False
 
-                self.player.update(self.tilemap, (self.movement[3] - self.movement[2], self.movement[1] - self.movement[0]))
+                # Solo actualizar jugador si no está en proceso de curación o death_timer
+                if not self.healing_mushrooms and self.death_timer == 0:
+                    self.player.update(self.tilemap, (self.movement[3] - self.movement[2], self.movement[1] - self.movement[0]))
+                    
                 if not self.tutorial:
                     for centi in self.centipedes[:]:
                         head = centi['head']
