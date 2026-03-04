@@ -41,6 +41,12 @@ class Game(GameBase):
             'life_up' : load_sound(BASE_PATH / "sounds" / "life_up.wav"),
         }
 
+        self.music = {
+            'music_1': BASE_PATH / "music" / "music_1.ogg",
+            'music_2': BASE_PATH / "music" / "music_2.ogg",
+            'music_3': BASE_PATH / "music" / "music_3.ogg",
+        }
+
         self.sfx['mushroom'].set_volume(0.1)
         self.sfx['get_shoot'].set_volume(0.1)
         self.sfx['shoot'].set_volume(0.1)
@@ -50,6 +56,9 @@ class Game(GameBase):
         self.movement = [False, False, False, False]
 
         self.font = pygame.font.Font(BASE_PATH / 'ADDLG___.TTF', 9)
+        self.large_font = pygame.font.Font(BASE_PATH / 'ADDLG___.TTF', 100)
+        self.level_display_timer = 0
+
         self.score = 0
         self.flag_score = 0
         self.death_timer = 0
@@ -152,6 +161,7 @@ class Game(GameBase):
             self.player.set_action('fire')
 
         self.dead = 0
+        self.level_display_timer = 120
     
     def reset_after_death(self):
         self.projectiles = []
@@ -188,6 +198,18 @@ class Game(GameBase):
         self.player.pos = [256, 350]
         self.player.velocity = [0, 0]
 
+    def draw_background_level(self):
+        if self.level_display_timer > 0:
+            alpha = min(100, self.level_display_timer * 2) 
+            text_surf = self.large_font.render(f"{self.difficulty_level}", True, self.current_color)
+            text_surf.set_alpha(alpha)
+            
+            x = (self.display.get_width() // 2) - (text_surf.get_width() // 2) + 10
+            y = (self.display.get_height() // 2) - (text_surf.get_height() // 2) + 5
+            
+            self.display.blit(text_surf, (x, y))
+            self.level_display_timer -= 1
+
     def handle_events(self, events: list[pygame.event.Event]):
         if self.tilemap.current_row_idx >= len(self.tilemap.rows_ordered):
             for event in events:
@@ -198,18 +220,19 @@ class Game(GameBase):
                     if self.dead >= 1:
                         if event.key == pygame.K_SPACE:
                             self.sfx['life_up'].play()
+                            pygame.mixer.music.load(random.choice(list(self.music.values())))
                             pygame.mixer.music.play(loops=-1)
                             self.screenshake = max(0, self.screenshake - 0.5)
                             self.tilemap = Tilemap(self, tile_size = 8)
                             self.tilemap.generate_map(70)
                             self.score = 0
                             self.flag_score = 0
+                            self.game_loop = 0
+                            self.difficulty_level = 1
                             self.dead = 0
                             self.player.lives = [(452 + (self.assets['player'].get_width() * (i)), 15) for i in range(3)]
-                            self.loop_levels = False
                             self.level = 1
                             self.load_level(1)
-                    # Bloquear controles durante curación de hongos y death_timer
                     elif not self.healing_mushrooms and self.death_timer == 0:
                         if event.key == pygame.K_w:
                             self.movement[0] = True
@@ -242,7 +265,7 @@ class Game(GameBase):
         
         if self.tilemap.current_row_idx >= len(self.tilemap.rows_ordered):
             if not self.music_start:
-                pygame.mixer.music.load(BASE_PATH / "sounds" / "bg_music.mp3")
+                pygame.mixer.music.load(random.choice(list(self.music.values())))
                 pygame.mixer.music.set_volume(0.2)
                 pygame.mixer.music.play(loops=-1)
                 self.music_start = True
@@ -253,7 +276,6 @@ class Game(GameBase):
                 if required_keys.issubset(self.key_pressed):
                     self.tutorial = False
 
-                # Solo actualizar jugador si no está en proceso de curación o death_timer
                 if not self.healing_mushrooms and self.death_timer == 0:
                     self.player.update(self.tilemap, (self.movement[3] - self.movement[2], self.movement[1] - self.movement[0]))
                     
@@ -320,9 +342,7 @@ class Game(GameBase):
                     if self.level >= 3 or self.game_loop >= 1:
                         self.scorpion_spawn_timer -= 1
                         if self.scorpion_spawn_timer <= 0:
-                            # Buscar una fila con espacio para el escorpión
-                            # Área válida: desde y=32 hasta el área del jugador
-                            min_y = 4  # 32 píxeles / 8
+                            min_y = 4
                             max_y = (self.display.get_height() - (96 + 14)) // self.tilemap.tile_size
                             
                             # Intentar encontrar una fila con espacio
@@ -585,6 +605,8 @@ class Game(GameBase):
             draw_text(self.display, self.font, score_str, 75, 16, self.current_color)
             draw_text(self.display, self.font, "LIVES:", 400, 16, self.current_color)
 
+        self.draw_background_level()
+
         pygame.draw.rect(self.display, self.current_color, (6, 6, self.display.get_width() - 12, self.display.get_height() - 12), 3)
         pygame.draw.rect(self.display, (15,13,20), (246, 0, 30, 10))
 
@@ -626,7 +648,7 @@ class Game(GameBase):
             self.display.blit(overlay, (0,0))
             
             draw_text(self.display, self.font, "GAME OVER", self.display.get_width()//2 - 40, self.display.get_height()//2 - 30, (255, 0, 0))
-            draw_text(self.display, self.font, f"FINAL SCORE: {self.score}", self.display.get_width()//2 - 59, self.display.get_height()//2 - 10, (255, 255, 255))
+            draw_text(self.display, self.font, f"FINAL SCORE: {self.score}", self.display.get_width()//2 - 60, self.display.get_height()//2 - 10, (255, 255, 255))
             
             if self.dead > 120:
                 if (pygame.time.get_ticks() // 500) % 2 == 0:

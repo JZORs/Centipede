@@ -1,4 +1,4 @@
-import pygame, random 
+import pygame, random, math
  
 class PhysicsEntity():
     def __init__(self, game, e_type, position, size):
@@ -63,34 +63,59 @@ class CentipedeHead(PhysicsEntity):
         self.change = 1
         self.flip = True if self.direction == 1 else False
         self.falling = False
+        self.poisoned = False
+        self.zigzag_timer = 0
         self.set_action('idle')
 
     def update(self, tilemap):
-        movement = (self.direction * self.speed, 0)
-        super().update(tilemap, movement)
+        for tile in tilemap.tiles_around(self.pos):
+            tile = tilemap.tilemap[f"{tile['pos'][0]};{tile['pos'][1]}"]
+            if tile['type'] == 'poison_m':
+                self.poisoned = True
+                self.falling = True
 
-        self.pos[1] = round(self.pos[1] / 8) * 8
-
-        wall_hit = self.pos[0] < 14 or self.pos[0] + self.size[0] > self.game.display.get_width() - 14
-        
-        if self.collisions['right'] or self.collisions['left'] or wall_hit:
-            self.direction *= -1
-            self.flip = not self.flip
-            self.is_tilting = True
-            self.set_action('tilt')
-
-            super().update(tilemap, movement=(0, 8 * self.change))
-            if self.collisions['down'] or self.collisions['up']:
-                super().update(tilemap, movement=(0, 16 * self.change))
-
+        # 2. LÓGICA DE MOVIMIENTO
+        if self.poisoned:
+            # --- LÓGICA DE VENENO ---
+            # Baja directamente hacia el jugador
+            self.pos[1] += self.speed * 1.5 
+            
+            # Zigzag visual rápido mientras baja
+            self.zigzag_timer += 0.5
+            self.pos[0] += math.sin(self.zigzag_timer) * 4
+            
+            # Si llega al área del jugador (límite inferior), se cura
+            if self.pos[1] >= self.game.display.get_height() - 24:
+                self.poisoned = False
+                self.falling = False
+                # Alineamos a la rejilla de 8 para retomar el movimiento normal
+                self.pos[1] = (self.pos[1] // 8) * 8
         else:
-            self.is_tilting = False
-            self.set_action('idle')
+            movement = (self.direction * self.speed, 0)
+            super().update(tilemap, movement)
 
-        if self.pos[1] + self.size[1] >= self.game.display.get_height() - 25 and self.change == 1:
-            self.change = -1
-        elif self.pos[1] <= 25 and self.change == -1:
-            self.change = 1
+            self.pos[1] = round(self.pos[1] / 8) * 8
+
+            wall_hit = self.pos[0] < 14 or self.pos[0] + self.size[0] > self.game.display.get_width() - 14
+            
+            if self.collisions['right'] or self.collisions['left'] or wall_hit:
+                self.direction *= -1
+                self.flip = not self.flip
+                self.is_tilting = True
+                self.set_action('tilt')
+
+                super().update(tilemap, movement=(0, 8 * self.change))
+                if self.collisions['down'] or self.collisions['up']:
+                    super().update(tilemap, movement=(0, 16 * self.change))
+
+            else:
+                self.is_tilting = False
+                self.set_action('idle')
+
+            if self.pos[1] + self.size[1] >= self.game.display.get_height() - 25 and self.change == 1:
+                self.change = -1
+            elif self.pos[1] <= 25 and self.change == -1:
+                self.change = 1
 
         self.history.append({'pos': list(self.pos), 'tilt': self.is_tilting})
 
@@ -189,7 +214,7 @@ class Player(PhysicsEntity):
 
 class Spider(PhysicsEntity):
     def __init__(self, game, position):
-        super().__init__(game, 'spider', position, (8, 8))
+        super().__init__(game, 'spider', position, (15, 8))
         self.direction = [random.choice([-1, 1]), random.choice([-1, 1])]
         self.speed = random.uniform(1.0, 2.0)
         self.set_action('idle')
@@ -256,13 +281,14 @@ class Spider(PhysicsEntity):
 
 class Flea(PhysicsEntity):
     def __init__(self, game, position):
-        super().__init__(game, 'flea', position, (8, 8))
+        super().__init__(game, 'flea', position, (9, 8))
         self.speed = 3.0  # Velocidad más rápida
         self.set_action('idle')
         self.mushroom_drop_timer = 0
         
     def update(self, tilemap):
         # Movimiento vertical hacia abajo SIN colisiones con hongos
+        self.pos[0] = (int(self.pos[0]) // 8) * 8
         self.pos[1] += self.speed
         
         # Generar hongos mientras cae con menor probabilidad (cada 16 píxeles aproximadamente)
@@ -289,12 +315,11 @@ class Flea(PhysicsEntity):
         self.animation.update()
     
     def render(self, surf):
-        visual_x = (int(self.pos[0]) // 8) * 8
-        surf.blit(self.animation.img(), (visual_x, self.pos[1]))
+        surf.blit(self.animation.img(), (self.pos[0], self.pos[1]))
 
 class Scorpion(PhysicsEntity):
     def __init__(self, game, position, direction):
-        super().__init__(game, 'scorpion', position, (8, 8))
+        super().__init__(game, 'scorpion', position, (15, 8))
         self.direction = direction  # -1 para izquierda, 1 para derecha
         self.speed = 2.0
         self.set_action('idle')
