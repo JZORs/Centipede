@@ -254,7 +254,7 @@ class Game(GameBase):
                             self.load_level(self.level)
                         if event.key == pygame.K_ESCAPE:
                             GameBase.stop(self)
-                    elif self.dead >= 1:
+                    elif self.dead > 120:
                         if event.key == pygame.K_SPACE:
                             self.sfx['life_up'].play()
                             self.screenshake = max(0, self.screenshake - 0.5)
@@ -271,7 +271,7 @@ class Game(GameBase):
                         if event.key == pygame.K_ESCAPE:
                             self.in_menu = True
                             pygame.mixer.music.stop()
-                    elif not self.healing_mushrooms and self.death_timer == 0:
+                    elif not self.dead >= 1 and not self.healing_mushrooms and self.death_timer == 0:
                         if event.key == pygame.K_w:
                             self.movement[0] = True
                             self.key_pressed.add('w')
@@ -597,7 +597,7 @@ class Game(GameBase):
                                 # Verificar colisiones con arañas
                                 for spider in self.spiders[:]:
                                     if spider.rect().colliderect(proj_rect):
-                                        for _ in range(15):
+                                        for _ in range(20):
                                             angle = random.random() * math.pi * 2
                                             speed = random.random() * 5
                                             self.particles.append(Particle(self, 'centipede', spider.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
@@ -630,7 +630,7 @@ class Game(GameBase):
                                 if not hit_something:
                                     for scorpion in self.scorpions[:]:
                                         if scorpion.rect().colliderect(proj_rect):
-                                            for _ in range(15):
+                                            for _ in range(20):
                                                 angle = random.random() * math.pi * 2
                                                 speed = random.random() * 5
                                                 self.particles.append(Particle(self, 'centipede', scorpion.rect().center, velocity=[math.cos(angle + math.pi) * speed * 0.5, math.sin(angle + math.pi) * speed * 0.5], frame=random.randint(0, 7)))
@@ -695,13 +695,13 @@ class Game(GameBase):
                 overlay.fill((0, 0, 0))
                 self.display.blit(overlay, (0,0))
                 
-                draw_text(self.display, self.font, "GAME OVER", self.display.get_width()//2 - 40, self.display.get_height()//2 - 40, (255, 0, 0))
-                draw_text(self.display, self.font, "FINAL SCORE:", self.display.get_width()//2 - 50, self.display.get_height()//2 - 20, (255, 255, 255))
-                draw_text(self.display, self.font, str(self.score), self.display.get_width()//2 - 55, self.display.get_height()//2, (255, 255, 255))
+                draw_text(self.display, self.font, "GAME OVER", self.display.get_width()//2 - (self.font.size("GAME OVER")[0]//2), self.display.get_height()//2 - 40, (255, 0, 0))
+                draw_text(self.display, self.font, "FINAL SCORE:", self.display.get_width()//2 - (self.font.size("FINAL SCORE:")[0]//2), self.display.get_height()//2 - 20, (255, 255, 255))
+                draw_text(self.display, self.font, str(self.score), self.display.get_width()//2 - (self.font.size(str(self.score))[0]//2), self.display.get_height()//2, (255, 255, 255))
                 
                 if self.dead > 120:
                     if (pygame.time.get_ticks() // 500) % 2 == 0:
-                        draw_text(self.display, self.font, "PRESS SPACE TO RESTART", self.display.get_width()//2 - 100, self.display.get_height()//2 + 25, self.current_color)
+                        draw_text(self.display, self.font, "PRESS SPACE TO RESTART", self.display.get_width()//2 - (self.font.size("PRESS SPACE TO RESTART")[0]//2), self.display.get_height()//2 + 30, self.current_color)
 
         screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2, random.random() * self.screenshake - self.screenshake / 2)
         self.surface.blit(pygame.transform.scale(self.display, self.surface.get_size()), screenshake_offset)
