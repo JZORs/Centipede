@@ -74,21 +74,14 @@ class CentipedeHead(PhysicsEntity):
                 self.poisoned = True
                 self.falling = True
 
-        # 2. LÓGICA DE MOVIMIENTO
         if self.poisoned:
-            # --- LÓGICA DE VENENO ---
-            # Baja directamente hacia el jugador
             self.pos[1] += self.speed * 1.5 
-            
-            # Zigzag visual rápido mientras baja
             self.zigzag_timer += 0.5
-            self.pos[0] += math.sin(self.zigzag_timer) * 4
+            self.pos[0] += math.sin(self.zigzag_timer) * 2
             
-            # Si llega al área del jugador (límite inferior), se cura
             if self.pos[1] >= self.game.display.get_height() - 24:
                 self.poisoned = False
                 self.falling = False
-                # Alineamos a la rejilla de 8 para retomar el movimiento normal
                 self.pos[1] = (self.pos[1] // 8) * 8
         else:
             movement = (self.direction * self.speed, 0)
@@ -260,10 +253,10 @@ class Spider(PhysicsEntity):
         # Eliminar hongos al pasar sobre ellos
         # Verificar las 4 esquinas del rectángulo de la araña
         corners = [
-            (self.pos[0], self.pos[1]),  # Esquina superior izquierda
-            (self.pos[0] + self.size[0], self.pos[1]),  # Esquina superior derecha
-            (self.pos[0], self.pos[1] + self.size[1]),  # Esquina inferior izquierda
-            (self.pos[0] + self.size[0], self.pos[1] + self.size[1])  # Esquina inferior derecha
+            (self.pos[0], self.pos[1]),  
+            (self.pos[0] + self.size[0], self.pos[1]),  
+            (self.pos[0], self.pos[1] + self.size[1]),  
+            (self.pos[0] + self.size[0], self.pos[1] + self.size[1])
         ]
         
         for corner in corners:
@@ -298,14 +291,13 @@ class Flea(PhysicsEntity):
             
             # Probabilidad del 40% de colocar un hongo
             if random.random() < 0.4:
-                # Calcular posición en la grilla
                 grid_x = int(self.pos[0] // tilemap.tile_size)
                 grid_y = int(self.pos[1] // tilemap.tile_size)
                 
                 # Límites del área de juego (considerando los bordes de 14 píxeles)
-                min_grid_x = 2  # 14 píxeles / 8 = ~2
+                min_grid_x = 2
                 max_grid_x = (self.game.display.get_width() - 14) // tilemap.tile_size
-                min_grid_y = 4  # Área superior (después del borde superior)
+                min_grid_y = 4 
                 max_grid_y = (self.game.display.get_height() - 14) // tilemap.tile_size
                 
                 # Solo generar hongos si está dentro del área válida
@@ -336,7 +328,6 @@ class Scorpion(PhysicsEntity):
         
         if tile_loc in tilemap.tilemap:
             tile = tilemap.tilemap[tile_loc]
-            # Cambiar a hongo envenenado si es un hongo normal
             if tile['type'] == 'normal_m':
                 tile['type'] = 'poison_m'
         
